@@ -2,11 +2,15 @@ import React, { Component } from 'react';
 
 import { DebounceInput } from 'react-debounce-input';
 
+import Canvas from '../Canvas/Canvas';
+
 import './App.sass';
 
 class App extends Component {
   constructor(props) {
     super(props);
+    this.afterRender = this.afterRender.bind(this);
+    this.onImageLoad = this.onImageLoad.bind(this);
     this.onButtonClick = this.onButtonClick.bind(this);
     this.onImageChange = this.onImageChange.bind(this);
     this.onChangeUpperText = this.onChangeUpperText.bind(this);
@@ -17,9 +21,13 @@ class App extends Component {
     this.state = { 
       currentMemeIndex: randomMemeIndex,
       upperText: 'upperText',
-      lowerText: 'lowerText'
+      lowerText: 'lowerText',
+      loadedImageHeight: 0,
+      loadedImageWidth: 0
     };
   }
+
+  static inputTimeout = 300;
 
   afterRender() {
     console.log('just rendered the jsx');
@@ -43,6 +51,31 @@ class App extends Component {
   componentDidUpdate() {
     console.log('componentDidUpdate');
     this.afterRender();
+  }
+
+  onImageLoad(event) {
+    console.log(this, event, event.target);
+    const imageElement = event.target;
+    this.setState({
+      loadedImageHeight: imageElement.height,
+      loadedImageWidth: imageElement.width,
+    });
+    /*
+    img.onload = function() {
+      // in case image has different dimensions..
+      console.log('image loaded');
+      console.log(img.height);
+      console.log(img.width);
+
+      scope.width = canvasLower.width = canvasUpper.width = img.width;
+      scope.height = canvasLower.height = canvasUpper.height = img.height;
+      element.find('div').first().css('height', `${scope.height}px`);
+      renderUpperText(scope);
+      renderLowerText(scope);
+      // sometimes image is too wide when changed
+      return $(window).trigger('resize');
+    };
+    */
   }
 
   onButtonClick() {
@@ -69,40 +102,46 @@ class App extends Component {
     });
   }
   
-  // helpers
+  // readability helpers
   getMemeUrl = meme => Object.values(meme)[0];
   getMemeTitle = meme => Object.keys(meme)[0];
 
   render() {
     const { memes } = this.props;
-    const { currentMemeIndex, upperText, lowerText } = this.state;
-
+    const { 
+      currentMemeIndex, 
+      upperText, 
+      lowerText, 
+      loadedImageHeight,
+      loadedImageWidth
+    } = this.state;
+    
     let options = [];
-    let defaultValue = this.getMemeUrl(memes[currentMemeIndex]);
+    let defaultSelectValue = this.getMemeUrl(memes[currentMemeIndex]);
     // build options
     memes.forEach((meme,index) => {
       const url = this.getMemeUrl(meme);
       const title = this.getMemeTitle(meme);
       if (index === currentMemeIndex)
-        defaultValue = url;
+        defaultSelectValue = url;
       const newOption = <option value={url} key={'option' + index}>{title}</option>
       options.push(newOption);
     });
 
     return (
       <div className="workshop-app">
-        <select onChange={this.onImageChange} value={defaultValue}>
+        <select onChange={this.onImageChange} value={defaultSelectValue}>
           {options}
         </select>
         
         <DebounceInput
           minLength={2}
-          debounceTimeout={300}
+          debounceTimeout={this.inputTimeout}
           value={upperText} onChange={this.onChangeUpperText}
         />
         <DebounceInput
           minLength={2}
-          debounceTimeout={300}
+          debounceTimeout={this.inputTimeout}
           value={lowerText} onChange={this.onChangeLowerText}
         />
         
@@ -111,7 +150,9 @@ class App extends Component {
         </button>
         <p className="title">{this.getMemeTitle(memes[currentMemeIndex])} {currentMemeIndex}</p>
         <div className="imageWrapper">
-          <img src={this.getMemeUrl(memes[currentMemeIndex])} alt="" />
+          <img src={this.getMemeUrl(memes[currentMemeIndex])} alt="" crossOrigin="Anonymous" onLoad={this.onImageLoad} />
+          <Canvas text={upperText} context={"upper"} width={loadedImageWidth} height={loadedImageHeight} />
+          <Canvas text={lowerText} context={"lower"} width={loadedImageWidth} height={loadedImageHeight} />
         </div>
       </div>
     );
