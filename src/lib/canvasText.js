@@ -1,3 +1,11 @@
+/*
+usage:
+
+drawMemeText(ctx, 'upper', text, width, 50);
+drawMemeText(ctx, 'lower', text, width, height - 50);
+
+*/
+
 var drawMemeText, drawText, wrap;
 
 drawMemeText = function(ctx, type, text, width, y) {
